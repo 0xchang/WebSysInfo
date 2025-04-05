@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统状态监控</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e1e2f, #2d2d44);
+            color: #fff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #7ed6df;
+            font-size: 2.5rem;
+            text-shadow: 0 0 10px rgba(126, 214, 223, 0.5);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-title {
+            font-size: 1.2rem;
+            color: #7ed6df;
+            margin-bottom: 1rem;
+        }
+
+        .progress-container {
+            background: rgba(255, 255, 255, 0.1);
+            height: 10px;
+            border-radius: 5px;
+            margin: 1rem 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #7ed6df, #686de0);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .unit {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .uptime {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 1.2rem;
+            color: #7ed6df;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
+        }
+
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>系统状态监控</h1>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-title">CPU 使用率</div>
+            <div class="stat-value" id="cpu">0%</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="cpu-progress"></div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">内存使用率</div>
+            <div class="stat-value" id="memory">0%</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="memory-progress"></div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">存储使用率</div>
+            <div class="stat-value" id="storage">0%</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="storage-progress"></div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">网络下载速度</div>
+            <div class="stat-value" id="download">0 <span class="unit">MB/s</span></div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">网络上传速度</div>
+            <div class="stat-value" id="upload">0 <span class="unit">MB/s</span></div>
+        </div>
+    </div>
+    <div class="uptime" id="uptime">系统运行时间：0 天 0 小时 0 分钟</div>
+</div>
+
+<script>
+        // 新增加的 AJAX 数据获取函数
+        function fetchData() {
+            fetch('/api/system-stats')  // API 接口地址
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateStats(data);  // 更新数据到界面
+                })
+                .catch(error => {
+                    console.error('数据获取失败:', error);
+                    // 可选：显示错误提示
+                    document.getElementById('cpu').textContent = '--%';
+                    document.getElementById('memory').textContent = '--%';
+                    document.getElementById('storage').textContent = '--%';
+                    document.getElementById('download').textContent = '-- MB/s';
+                    document.getElementById('upload').textContent = '-- MB/s';
+                });
+        }
+
+        function updateStats(data) {
+            // 模拟数据更新
+            console.log(data);
+            document.getElementById('cpu').textContent = data.cpu_use + '%';
+            document.getElementById('memory').textContent = data.mem_use + '%';
+            document.getElementById('storage').textContent = data.disk_use + '%';
+            document.getElementById('download').innerHTML = data.dspeed + ' <span class="unit">MB/s</span>';
+            document.getElementById('upload').innerHTML = data.uspeed + ' <span class="unit">MB/s</span>';
+
+            // 更新进度条
+            updateProgress('cpu-progress', parseInt(document.getElementById('cpu').textContent));
+            updateProgress('memory-progress', parseInt(document.getElementById('memory').textContent));
+            updateProgress('storage-progress', parseInt(document.getElementById('storage').textContent));
+
+            // 更新运行时间
+            updateUptime(data);
+        }
+
+        function updateProgress(elementId, percentage) {
+            const progressBar = document.getElementById(elementId);
+            progressBar.style.width = percentage + '%';
+
+            // 根据数值改变颜色
+            if(percentage > 80) {
+                progressBar.style.background = 'linear-gradient(90deg, #ff7979, #eb4d4b)';
+            } else if(percentage > 60) {
+                progressBar.style.background = 'linear-gradient(90deg, #f6e58d, #f9ca24)';
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, #7ed6df, #686de0)';
+            }
+        }
+
+        function updateUptime(data) {
+            // 模拟运行时间（实际使用中应从服务器获取）
+            const days = data.days;
+            const hours = data.hours;
+            const minutes = data.minutes;
+            document.getElementById('uptime').textContent =
+                `系统运行时间：${days} 天 ${hours} 小时 ${minutes} 分钟`;
+        }
+
+
+        let refreshInterval = 1200;
+        let pollTimer = null;
+
+        // 启动轮询
+        function startPolling() {
+            // 立即获取第一次数据
+            fetchData();
+            // 设置定时器
+            pollTimer = setInterval(fetchData, refreshInterval);
+        }
+
+        // 停止轮询（可选）
+        function stopPolling() {
+            clearInterval(pollTimer);
+        }
+
+        startPolling();
+
+
+</script>
+</body>
+</html>
