@@ -146,7 +146,7 @@ def info():
     cpu_model = platform.machine()
     cpu_cores = psutil.cpu_count()
     cpu_arch = platform.architecture()
-    os_version = platform.system() + ' ' + platform.version()
+    os_version = platform.system() + ' ' + platform.version().split()[0]
     total_memory = psutil.virtual_memory().total / 1024 / 1024
     virtual_memory = psutil.swap_memory().total / 1024 / 1024
     total_storage = get_total_storage()
