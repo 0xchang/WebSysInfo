@@ -1,6 +1,9 @@
+import os
+
 from flask import Flask, render_template, jsonify
 import psutil
 import time
+import platform
 
 app = Flask(__name__)
 
@@ -90,6 +93,43 @@ def get_system_uptime():
     return int(days), int(hours), int(minutes)
 
 
+def get_total_storage():
+    """获取系统总存储容量（单位：GB）"""
+    total_bytes = 0
+    seen_devices = set()  # 用于设备去重
+
+    # 排除的虚拟文件系统类型
+    excluded_fs_types = {
+        'tmpfs', 'proc', 'devtmpfs', 'sysfs',
+        'overlay', 'aufs', 'squashfs', 'none'
+    }
+
+    for part in psutil.disk_partitions(all=False):
+        # 跳过虚拟文件系统和重复设备
+        if part.fstype in excluded_fs_types:
+            continue
+
+        # Windows 特殊处理：通过设备路径去重
+        if psutil.WINDOWS:
+            device = part.device.split('\\')[0]  # 取驱动器字母（如 "C:"）
+            if device in seen_devices:
+                continue
+            seen_devices.add(device)
+        else:
+            # Linux/Mac 通过设备名去重（如 "/dev/disk1"）
+            if part.device in seen_devices:
+                continue
+            seen_devices.add(part.device)
+
+        try:
+            usage = psutil.disk_usage(part.mountpoint)
+            total_bytes += usage.total
+        except Exception as e:
+            print(f"Warning: 无法获取 {part.mountpoint} 的存储信息 ({str(e)})")
+
+    # 字节转GB（1GB = 1024^3 bytes）
+    return round(total_bytes / (1024 ** 3), 1)
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -103,6 +143,13 @@ def info():
     dspeed = '{:.2f}'.format(get_download_speed(interval=0.2))
     uspeed = '{:.2f}'.format(get_upload_speed(interval=0.2))
     days, hours, minutes = get_system_uptime()
+    cpu_model = platform.machine()
+    cpu_cores = psutil.cpu_count()
+    cpu_arch = platform.architecture()
+    os_version = platform.system() + ' ' + platform.version()
+    total_memory = psutil.virtual_memory().total / 1024 / 1024
+    virtual_memory = psutil.swap_memory().total / 1024 / 1024
+    total_storage = get_total_storage()
     data = {
         "cpu_use": cpu_use,
         "mem_use": mem_use,
@@ -111,7 +158,14 @@ def info():
         "uspeed": uspeed,
         "days": days,
         "hours": hours,
-        "minutes": minutes
+        "minutes": minutes,
+        'cpu_model': cpu_model,
+        'cpu_cores': cpu_cores,
+        'cpu_arch': cpu_arch,
+        'os_version': os_version,
+        'total_memory': total_memory,
+        'virtual_memory': virtual_memory,
+        'total_storage':total_storage
     }
     return jsonify(data)
 

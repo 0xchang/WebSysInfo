@@ -99,18 +99,47 @@
             }
         }
 
-
+    </style>
+    <style>
+        /* 新增样式 */
+        .stat-info {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 0.8rem;
+        }
+        .stat-info-item {
+            margin: 0.3rem 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .stat-info-label {
+            color: rgba(126, 214, 223, 0.8);
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>系统状态监控</h1>
     <div class="stats-grid">
-        <div class="stat-card">
+       <div class="stat-card">
             <div class="stat-title">CPU 使用率</div>
             <div class="stat-value" id="cpu">0%</div>
             <div class="progress-container">
                 <div class="progress-bar" id="cpu-progress"></div>
+            </div>
+            <div class="stat-info">
+                <div class="stat-info-item">
+                    <span class="stat-info-label">型号：</span>
+                    <span id="cpu-model">-</span>
+                </div>
+                <div class="stat-info-item">
+                    <span class="stat-info-label">核心数：</span>
+                    <span id="cpu-cores">-</span>
+                </div>
+                <div class="stat-info-item">
+                    <span class="stat-info-label">架构：</span>
+                    <span id="cpu-arch">-</span>
+                </div>
             </div>
         </div>
 
@@ -120,6 +149,20 @@
             <div class="progress-container">
                 <div class="progress-bar" id="memory-progress"></div>
             </div>
+            <div class="stat-info">
+                <div class="stat-info-item">
+                    <span class="stat-info-label">系统版本：</span>
+                    <span id="os-version">-</span>
+                </div>
+                <div class="stat-info-item">
+                    <span class="stat-info-label">总内存：</span>
+                    <span id="total-memory">- GB</span>
+                </div>
+                <div class="stat-info-item">
+                    <span class="stat-info-label">虚拟内存：</span>
+                    <span id="virtual-memory">- GB</span>
+                </div>
+            </div>
         </div>
 
         <div class="stat-card">
@@ -127,6 +170,12 @@
             <div class="stat-value" id="storage">0%</div>
             <div class="progress-container">
                 <div class="progress-bar" id="storage-progress"></div>
+            </div>
+            <div class="stat-info">
+                <div class="stat-info-item">
+                    <span class="stat-info-label">总存储：</span>
+                    <span id="total-storage">- GB</span>
+                </div>
             </div>
         </div>
 
@@ -173,6 +222,20 @@
             document.getElementById('cpu').textContent = data.cpu_use + '%';
             document.getElementById('memory').textContent = data.mem_use + '%';
             document.getElementById('storage').textContent = data.disk_use + '%';
+
+            // 新增CPU信息
+            document.getElementById('cpu-model').textContent = data.cpu_model;
+            document.getElementById('cpu-cores').textContent = data.cpu_cores + ' 核';
+            document.getElementById('cpu-arch').textContent = data.cpu_arch;
+
+            // 新增内存信息
+            document.getElementById('os-version').textContent = data.os_version;
+            document.getElementById('total-memory').textContent = (data.total_memory/1024).toFixed(1) + ' GB';
+            document.getElementById('virtual-memory').textContent = (data.virtual_memory/1024).toFixed(1) + ' GB';
+
+            // 新增存储信息
+            document.getElementById('total-storage').textContent = (data.total_storage).toFixed(1) + ' GB';
+
             document.getElementById('download').innerHTML = data.dspeed + ' <span class="unit">MB/s</span>';
             document.getElementById('upload').innerHTML = data.uspeed + ' <span class="unit">MB/s</span>';
 
